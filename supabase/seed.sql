@@ -1,0 +1,2 @@
+-- Seed data placeholder for local Supabase development.
+-- Add your initial rows here when needed.

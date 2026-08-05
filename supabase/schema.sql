@@ -69,6 +69,13 @@ create table if not exists public.rsvp (
   created_at timestamptz default now()
 );
 
+-- Enable Row Level Security on all tables
+alter table public.users enable row level security;
+alter table public.invitations enable row level security;
+alter table public.gallery enable row level security;
+alter table public.events enable row level security;
+alter table public.rsvp enable row level security;
+
 create index if not exists invitations_user_id_idx on public.invitations(user_id);
 create index if not exists gallery_invitation_id_idx on public.gallery(invitation_id);
 create index if not exists events_invitation_id_idx on public.events(invitation_id);

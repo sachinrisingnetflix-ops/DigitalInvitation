@@ -179,7 +179,7 @@ export function MainLayout() {
           <div className="gold-line mt-12 mb-6" />
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="font-body text-body-sm text-ivory/30">
-              &copy; 2025 Velvet & Gold. All rights reserved.
+              &copy; 2026 Velvet & Gold. All rights reserved.
             </p>
             <p className="font-body text-body-sm text-ivory/30">
               Designed with <span className="text-gold">elegance</span> in mind.

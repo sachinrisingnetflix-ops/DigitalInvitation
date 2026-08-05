@@ -8,6 +8,7 @@ import { SectionHeader } from '@/components/ui/SectionHeader';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { Card } from '@/components/ui/Card';
 import { cn } from '@/lib/utils';
+import { useAuthSession } from '@/hooks/useAuthSession';
 
 /* ─── Animated Particles Background ─── */
 function ParticleField() {
@@ -458,6 +459,7 @@ function TestimonialsSection() {
 /* ─── CTA Section ─── */
 function CTASection() {
   const { ref, visible } = useScrollReveal();
+  const { isAuthenticated } = useAuthSession();
 
   return (
     <section ref={ref} className="relative py-32">
@@ -495,9 +497,9 @@ function CTASection() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
-            <Link to="/login">
+            <Link to={isAuthenticated ? '/admin' : '/login'}>
               <Button variant="outline" size="lg">
-                Sign In
+                {isAuthenticated ? 'Dashboard' : 'Sign In'}
               </Button>
             </Link>
           </div>

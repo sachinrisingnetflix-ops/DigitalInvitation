@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { invitations as initialInvitations } from '@/data/dummy';
 import type { Invitation } from '@/types';
 import type { InvitationFormData } from '@/schemas/invitation';
@@ -17,29 +17,60 @@ export interface InvitationWithMedia extends Invitation {
   music?: { title: string; artist: string; url: string };
 }
 
-let idCounter = 100;
+const INVITATIONS_STORAGE_KEY = 'digitalInvitation.invitations';
+
+function createInitialInvitations(): InvitationWithMedia[] {
+  return initialInvitations.map((inv) => ({
+    ...inv,
+    brideFirstName: 'Isabella',
+    brideLastName: 'Rosemont',
+    groomFirstName: 'James',
+    groomLastName: 'Harrington',
+    eventTime: '16:00',
+    venueName: 'Chateau de Versailles',
+    venueAddress: "Place d'Armes, 78000 Versailles, France",
+    message:
+      'Together with our families, we invite you to join us as we begin our forever.',
+    rsvpDeadline: '2025-08-20',
+    photos: [],
+  }));
+}
+
+export function getStoredInvitations() {
+  if (typeof window === 'undefined') {
+    return createInitialInvitations();
+  }
+
+  const stored = window.localStorage.getItem(INVITATIONS_STORAGE_KEY);
+  if (!stored) {
+    return createInitialInvitations();
+  }
+
+  try {
+    return JSON.parse(stored) as InvitationWithMedia[];
+  } catch {
+    return createInitialInvitations();
+  }
+}
+
+function createInvitationId() {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return `inv-${crypto.randomUUID()}`;
+  }
+
+  return `inv-${Date.now().toString(36)}`;
+}
 
 export function useInvitations() {
-  const [items, setItems] = useState<InvitationWithMedia[]>(
-    initialInvitations.map((inv) => ({
-      ...inv,
-      brideFirstName: 'Isabella',
-      brideLastName: 'Rosemont',
-      groomFirstName: 'James',
-      groomLastName: 'Harrington',
-      eventTime: '16:00',
-      venueName: 'Chateau de Versailles',
-      venueAddress: "Place d'Armes, 78000 Versailles, France",
-      message:
-        'Together with our families, we invite you to join us as we begin our forever.',
-      rsvpDeadline: '2025-08-20',
-      photos: [],
-    }))
-  );
+  const [items, setItems] = useState<InvitationWithMedia[]>(getStoredInvitations);
+
+  useEffect(() => {
+    window.localStorage.setItem(INVITATIONS_STORAGE_KEY, JSON.stringify(items));
+  }, [items]);
 
   const create = useCallback((data: InvitationFormData) => {
     const newItem: InvitationWithMedia = {
-      id: `inv-${++idCounter}`,
+      id: createInvitationId(),
       title: data.title,
       eventDate: data.eventDate,
       location: data.venueName,

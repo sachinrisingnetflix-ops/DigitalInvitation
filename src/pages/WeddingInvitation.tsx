@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Heart,
@@ -34,12 +34,11 @@ import { ImageZoom } from '@/components/animations/ImageZoom';
 import { ParallaxImage } from '@/components/animations/ParallaxImage';
 import { SmoothScroll } from '@/components/animations/SmoothScroll';
 import { cn } from '@/lib/utils';
+import { getStoredInvitations, type InvitationWithMedia } from '@/hooks/useInvitations';
 
 /* ──────────────────────────────────────────────────────────────── */
 /*  PLACEHOLDER DATA                                               */
 /* ──────────────────────────────────────────────────────────────── */
-
-const WEDDING_DATE = '2025-09-20T16:00:00';
 
 const COUPLE = {
   bride: { first: 'Isabella', last: 'Rosemont', full: 'Isabella Rosemont' },
@@ -94,18 +93,92 @@ const VENUE = {
   lng: 2.1204,
 };
 
+interface WeddingDetails {
+  title: string;
+  dateTime: string;
+  displayDate: string;
+  displayLocation: string;
+  message: string;
+  heroImage: string;
+  couple: typeof COUPLE;
+  gallery: string[];
+  venue: {
+    name: string;
+    address: string;
+    description: string;
+    lat: number;
+    lng: number;
+  };
+  music?: { title: string; artist: string; url: string };
+}
+
+function formatInvitationDate(dateTime: string) {
+  const date = new Date(dateTime);
+
+  if (Number.isNaN(date.getTime())) {
+    return dateTime;
+  }
+
+  return date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+function buildWeddingDetails(invitation: InvitationWithMedia): WeddingDetails {
+  const brideFirst = invitation.brideFirstName || COUPLE.bride.first;
+  const brideLast = invitation.brideLastName || COUPLE.bride.last;
+  const groomFirst = invitation.groomFirstName || COUPLE.groom.first;
+  const groomLast = invitation.groomLastName || COUPLE.groom.last;
+  const gallery = invitation.photos?.map((photo) => photo.url).filter(Boolean) ?? [];
+  const displayLocation = invitation.venueName || invitation.location || VENUE.name;
+
+  return {
+    title: invitation.title,
+    dateTime: invitation.eventTime && !invitation.eventDate.includes('T')
+      ? `${invitation.eventDate}T${invitation.eventTime}`
+      : invitation.eventDate,
+    displayDate: formatInvitationDate(invitation.eventDate),
+    displayLocation,
+    message: invitation.message || 'Together with our families, we invite you to join us as we begin our forever.',
+    heroImage: gallery[0] || GALLERY[0],
+    couple: {
+      bride: {
+        first: brideFirst,
+        last: brideLast,
+        full: `${brideFirst} ${brideLast}`.trim(),
+      },
+      groom: {
+        first: groomFirst,
+        last: groomLast,
+        full: `${groomFirst} ${groomLast}`.trim(),
+      },
+    },
+    gallery: gallery.length > 0 ? gallery : GALLERY,
+    venue: {
+      ...VENUE,
+      name: displayLocation,
+      address: invitation.venueAddress || invitation.location || VENUE.address,
+      description: invitation.message || VENUE.description,
+    },
+    music: invitation.music,
+  };
+}
+
 /* ──────────────────────────────────────────────────────────────── */
 /*  HERO SECTION                                                   */
 /* ──────────────────────────────────────────────────────────────── */
 
-function HeroSection() {
+function HeroSection({ details }: { details: WeddingDetails }) {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background with parallax */}
       <div className="absolute inset-0">
         <ParallaxImage
-          src="https://images.unsplash.com/photo-1519741497674-611481863552?w=1920&h=1080&fit=crop"
-          alt="Wedding background"
+          src={details.heroImage}
+          alt={details.title}
           speed={0.2}
           className="absolute inset-0 w-full h-[120%] -top-[10%]"
         />
@@ -156,7 +229,7 @@ function HeroSection() {
               align="center"
               className="font-display italic"
             >
-              {COUPLE.bride.first}
+              {details.couple.bride.first}
             </Title>
           </FadeIn>
 
@@ -180,7 +253,7 @@ function HeroSection() {
               align="center"
               className="font-display italic"
             >
-              {COUPLE.groom.first}
+              {details.couple.groom.first}
             </Title>
           </FadeIn>
         </div>
@@ -203,13 +276,10 @@ function HeroSection() {
               />
             </div>
             <p className="font-body text-body-lg text-ivory/70 tracking-wide">
-              Saturday, the Twentieth of September
-            </p>
-            <p className="font-body text-body-lg text-ivory/70 tracking-wide mt-1">
-              Two Thousand Twenty-Five
+              {details.displayDate}
             </p>
             <p className="font-body text-body-md text-gold mt-4 tracking-widest uppercase">
-              Versailles, France
+              {details.displayLocation}
             </p>
           </div>
         </FadeIn>
@@ -231,7 +301,7 @@ function HeroSection() {
 /*  INVITATION MESSAGE                                             */
 /* ──────────────────────────────────────────────────────────────── */
 
-function InvitationMessage() {
+function InvitationMessage({ details }: { details: WeddingDetails }) {
   return (
     <section className="relative py-32">
       <div className="absolute inset-0 bg-gradient-to-b from-black via-black-50 to-black" />
@@ -259,15 +329,13 @@ function InvitationMessage() {
 
           <FadeIn delay={0.2}>
             <Title as="h2" variant="section" color="ivory" align="center" className="mb-8">
-              You are cordially invited
+              {details.title}
             </Title>
           </FadeIn>
 
           <FadeIn delay={0.4}>
             <p className="font-body text-body-lg text-ivory/60 leading-[1.9] mb-6">
-              Together with our families, we invite you to join us as we begin our forever.
-              Your presence would mean the world to us as we exchange vows and celebrate
-              the love that has brought us here.
+              {details.message}
             </p>
           </FadeIn>
 
@@ -281,11 +349,11 @@ function InvitationMessage() {
           <FadeIn delay={0.8}>
             <div className="mt-12 space-y-2">
               <p className="font-display text-2xl text-gold italic">
-                {COUPLE.bride.full}
+                {details.couple.bride.full}
               </p>
               <p className="font-display text-xl text-ivory/40 italic">&</p>
               <p className="font-display text-2xl text-gold italic">
-                {COUPLE.groom.full}
+                {details.couple.groom.full}
               </p>
             </div>
           </FadeIn>
@@ -299,8 +367,8 @@ function InvitationMessage() {
 /*  COUNTDOWN                                                      */
 /* ──────────────────────────────────────────────────────────────── */
 
-function CountdownSection() {
-  const { days, hours, minutes, seconds } = useCountdown(WEDDING_DATE);
+function CountdownSection({ dateTime }: { dateTime: string }) {
+  const { days, hours, minutes, seconds } = useCountdown(dateTime);
 
   const units = [
     { value: days, label: 'Days' },
@@ -425,15 +493,20 @@ function StorySection() {
 /*  GALLERY                                                        */
 /* ──────────────────────────────────────────────────────────────── */
 
-function GallerySection() {
+function GallerySection({ images }: { images: string[] }) {
   const [lightbox, setLightbox] = useState<number | null>(null);
+  const imageCount = images.length;
 
   const openLightbox = (index: number) => setLightbox(index);
   const closeLightbox = () => setLightbox(null);
-  const prevImage = () =>
-    setLightbox((i) => (i === null ? null : i === 0 ? GALLERY.length - 1 : i - 1));
-  const nextImage = () =>
-    setLightbox((i) => (i === null ? null : i === GALLERY.length - 1 ? 0 : i + 1));
+  const prevImage = useCallback(
+    () => setLightbox((i) => (i === null ? null : i === 0 ? imageCount - 1 : i - 1)),
+    [imageCount]
+  );
+  const nextImage = useCallback(
+    () => setLightbox((i) => (i === null ? null : i === imageCount - 1 ? 0 : i + 1)),
+    [imageCount]
+  );
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -442,7 +515,7 @@ function GallerySection() {
       if (e.key === 'ArrowLeft') prevImage();
       if (e.key === 'ArrowRight') nextImage();
     },
-    [lightbox]
+    [lightbox, nextImage, prevImage]
   );
 
   useEffect(() => {
@@ -468,7 +541,7 @@ function GallerySection() {
         </div>
 
         <StaggerContainer staggerDelay={0.1} className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {GALLERY.map((src, i) => (
+          {images.map((src, i) => (
             <StaggerItem
               key={i}
               className={cn(
@@ -546,7 +619,7 @@ function GallerySection() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-              src={GALLERY[lightbox]}
+              src={images[lightbox]}
               alt="Lightbox"
               className="max-h-[85vh] max-w-full rounded-elegant border border-gold/10"
               onClick={(e) => e.stopPropagation()}
@@ -646,8 +719,8 @@ function TimelineSection() {
 /*  VENUE + MAP                                                    */
 /* ──────────────────────────────────────────────────────────────── */
 
-function VenueSection() {
-  const mapUrl = `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2626.3667!2d${VENUE.lng}!3d${VENUE.lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47e67db1a9749b2b%3A0x50b82c368941b0!2sPalace%20of%20Versailles!5e0!3m2!1sen!2sfr!4v1699999999999!5m2!1sen!2sfr`;
+function VenueSection({ venue }: { venue: WeddingDetails['venue'] }) {
+  const mapUrl = `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2626.3667!2d${venue.lng}!3d${venue.lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47e67db1a9749b2b%3A0x50b82c368941b0!2sPalace%20of%20Versailles!5e0!3m2!1sen!2sfr!4v1699999999999!5m2!1sen!2sfr`;
 
   return (
     <section className="relative py-32">
@@ -670,10 +743,10 @@ function VenueSection() {
           <FadeIn direction="left" delay={0.1}>
             <div className="space-y-8">
               <div>
-                <h3 className="font-display text-3xl text-gold mb-4">{VENUE.name}</h3>
+                <h3 className="font-display text-3xl text-gold mb-4">{venue.name}</h3>
                 <div className="flex items-start gap-3">
                   <MapPin className="h-5 w-5 text-gold mt-0.5 flex-shrink-0" />
-                  <p className="font-body text-body-md text-ivory/60">{VENUE.address}</p>
+                  <p className="font-body text-body-md text-ivory/60">{venue.address}</p>
                 </div>
               </div>
 
@@ -686,7 +759,7 @@ function VenueSection() {
               />
 
               <p className="font-body text-body-md text-ivory/50 leading-relaxed">
-                {VENUE.description}
+                {venue.description}
               </p>
 
               <StaggerContainer staggerDelay={0.1} className="grid sm:grid-cols-3 gap-4">
@@ -898,7 +971,7 @@ function RSVPSection() {
 /*  MUSIC PLAYER                                                   */
 /* ──────────────────────────────────────────────────────────────── */
 
-function MusicSection() {
+function MusicSection({ music }: { music: NonNullable<WeddingDetails['music']> }) {
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
 
@@ -927,7 +1000,7 @@ function MusicSection() {
                   Our Song
                 </p>
                 <p className="font-display text-lg text-ivory">
-                  &ldquo;La Vie en Rose&rdquo; — Edith Piaf
+                  &ldquo;{music.title}&rdquo; - {music.artist}
                 </p>
               </div>
             </div>
@@ -976,7 +1049,7 @@ function MusicSection() {
 /*  FOOTER                                                         */
 /* ──────────────────────────────────────────────────────────────── */
 
-function WeddingFooter() {
+function WeddingFooter({ details }: { details: WeddingDetails }) {
   return (
     <footer className="relative py-20 border-t border-gold/10">
       <div className="absolute inset-0 bg-black" />
@@ -990,7 +1063,7 @@ function WeddingFooter() {
               <Heart className="h-5 w-5 text-gold fill-gold mx-auto" />
             </motion.div>
             <Title as="h3" variant="card" color="gold" align="center" className="italic">
-              {COUPLE.bride.first} & {COUPLE.groom.first}
+              {details.couple.bride.first} & {details.couple.groom.first}
             </Title>
             <motion.div
               initial={{ scaleX: 0 }}
@@ -1003,7 +1076,7 @@ function WeddingFooter() {
               With love, gratitude, and excitement — we cannot wait to celebrate with you.
             </p>
             <p className="font-body text-label uppercase tracking-[0.2em] text-ivory/20 pt-4">
-              September 20, 2025 &middot; Versailles
+              {details.displayDate} &middot; {details.displayLocation}
             </p>
           </div>
         </FadeIn>
@@ -1035,19 +1108,45 @@ function WeddingFooter() {
 /* ──────────────────────────────────────────────────────────────── */
 
 export function WeddingInvitation() {
+  const { id } = useParams();
+  const invitation = getStoredInvitations().find((item) => item.id === id);
+
+  if (!invitation) {
+    return (
+      <div className="min-h-screen bg-black text-ivory font-body flex items-center justify-center px-6">
+        <div className="max-w-md text-center space-y-6">
+          <Title as="h1" variant="card" color="ivory" align="center">
+            Invitation not found
+          </Title>
+          <p className="text-ivory/50">
+            This invitation is not available in this browser. Open it from the admin dashboard after creating or saving it.
+          </p>
+          <Link
+            to="/admin/invitations"
+            className="inline-flex items-center justify-center rounded-elegant bg-gold px-5 py-3 font-body text-sm font-medium text-black hover:bg-gold-400 transition-colors"
+          >
+            Back to invitations
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const details = buildWeddingDetails(invitation);
+
   return (
     <SmoothScroll>
       <div className="bg-black text-ivory font-body">
-        <HeroSection />
-        <InvitationMessage />
-        <CountdownSection />
+        <HeroSection details={details} />
+        <InvitationMessage details={details} />
+        <CountdownSection dateTime={details.dateTime} />
         <StorySection />
-        <GallerySection />
+        <GallerySection images={details.gallery} />
         <TimelineSection />
-        <VenueSection />
+        <VenueSection venue={details.venue} />
         <RSVPSection />
-        <MusicSection />
-        <WeddingFooter />
+        {details.music && <MusicSection music={details.music} />}
+        <WeddingFooter details={details} />
       </div>
     </SmoothScroll>
   );

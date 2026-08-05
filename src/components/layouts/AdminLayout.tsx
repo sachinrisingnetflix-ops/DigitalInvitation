@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Mail,
@@ -10,8 +10,9 @@ import {
   Crown,
   LogOut,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { getCurrentUser, signOut } from '@/services/supabaseAuth';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
@@ -24,6 +25,46 @@ const navItems = [
 export function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const [userName, setUserName] = useState('');
+  const [userEmail, setUserEmail] = useState('');
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const user = await getCurrentUser();
+        if (user) {
+          setUserEmail(user.email || '');
+          setUserName(user.user_metadata?.name || user.email?.split('@')[0] || 'User');
+        } else {
+          navigate('/login', { replace: true });
+        }
+      } catch (err) {
+        console.error('Failed to load user:', err);
+        navigate('/login', { replace: true });
+      }
+    };
+
+    void loadUser();
+  }, [navigate]);
+
+  const getInitials = (name: string): string => {
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2) || 'U';
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate('/login', { replace: true });
+    } catch (err) {
+      console.error('Sign out failed:', err);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-black text-ivory font-body flex">
@@ -83,17 +124,21 @@ export function AdminLayout() {
         <div className="p-6 border-t border-gold/10">
           <div className="flex items-center gap-4">
             <div className="h-10 w-10 rounded-full bg-gold/10 border border-gold/20 flex items-center justify-center">
-              <span className="font-display text-sm text-gold">AM</span>
+              <span className="font-display text-sm text-gold">{getInitials(userName)}</span>
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-body text-body-sm font-medium text-ivory truncate">
-                Alexandra Morgan
+                {userName}
               </p>
               <p className="font-body text-body-sm text-ivory/40 truncate">
-                alexandra@velvetgold.com
+                {userEmail}
               </p>
             </div>
-            <button className="text-ivory/30 hover:text-gold transition-colors">
+            <button 
+              onClick={handleSignOut}
+              className="text-ivory/30 hover:text-gold transition-colors"
+              title="Sign out"
+            >
               <LogOut className="h-4 w-4" />
             </button>
           </div>

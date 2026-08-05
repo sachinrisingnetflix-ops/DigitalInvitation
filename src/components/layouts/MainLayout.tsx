@@ -2,6 +2,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { Crown, Menu, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { useAuthSession } from '@/hooks/useAuthSession';
 
 const navLinks = [
   { label: 'Home', href: '/' },
@@ -14,6 +15,10 @@ export function MainLayout() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { pathname } = useLocation();
+  const { isAuthenticated } = useAuthSession();
+  const authLink = isAuthenticated
+    ? { label: 'Dashboard', href: '/admin' }
+    : { label: 'Sign In', href: '/login' };
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 40);
@@ -71,10 +76,10 @@ export function MainLayout() {
             {/* CTA */}
             <div className="hidden md:block">
               <Link
-                to="/login"
+                to={authLink.href}
                 className="inline-flex items-center gap-2 font-body text-label uppercase tracking-[0.15em] text-gold border border-gold/30 px-6 py-2.5 rounded-elegant hover:bg-gold/10 hover:border-gold/50 transition-all duration-500"
               >
-                Sign In
+                {authLink.label}
               </Link>
             </div>
 
@@ -110,10 +115,10 @@ export function MainLayout() {
             ))}
             <div className="pt-4">
               <Link
-                to="/login"
+                to={authLink.href}
                 className="inline-flex items-center gap-2 font-body text-label uppercase tracking-[0.15em] text-gold border border-gold/30 px-6 py-2.5 rounded-elegant"
               >
-                Sign In
+                {authLink.label}
               </Link>
             </div>
           </div>

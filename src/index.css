@@ -24,6 +24,7 @@
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-color: #0A0A0A;
   }
 
   body {
@@ -32,6 +33,30 @@
     font-family: "Poppins", system-ui, sans-serif;
     font-feature-settings: "kern" 1, "liga" 1;
     overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+  }
+
+  :focus-visible {
+    outline: 2px solid rgba(201, 168, 76, 0.8);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 
   ::selection {
@@ -136,6 +161,18 @@
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   .animate-delay-100 {

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="Velvet and Gold invitation branding">
+  <rect width="1200" height="630" fill="#0A0A0A" />
+  <rect x="72" y="72" width="1056" height="486" rx="36" fill="#1A1A1A" stroke="#C9A84C" stroke-width="4" />
+  <text x="600" y="280" text-anchor="middle" fill="#F5F0E8" font-family="'Playfair Display', Georgia, serif" font-size="72">Velvet &amp; Gold</text>
+  <text x="600" y="352" text-anchor="middle" fill="#C9A84C" font-family="'Poppins', Arial, sans-serif" font-size="28" letter-spacing="8">LUXURY INVITATIONS</text>
+  <line x1="420" y1="392" x2="780" y2="392" stroke="#C9A84C" stroke-width="3" />
+  <text x="600" y="444" text-anchor="middle" fill="#F5F0E8" font-family="'Poppins', Arial, sans-serif" font-size="24">Elegant digital experiences for life&apos;s most treasured moments</text>
+</svg>

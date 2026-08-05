@@ -37,6 +37,7 @@ export function PreviewModal({ invitation, onClose }: PreviewModalProps) {
             </p>
             <button
               onClick={onClose}
+              aria-label="Close preview"
               className="h-8 w-8 rounded-full border border-gold/20 flex items-center justify-center text-ivory/40 hover:text-gold hover:border-gold/40 transition-colors"
             >
               <X className="h-4 w-4" />
@@ -150,7 +151,11 @@ export function PreviewModal({ invitation, onClose }: PreviewModalProps) {
                       >
                         <img
                           src={photo.url}
-                          alt={photo.caption || ''}
+                          alt={photo.caption || 'Invitation gallery image'}
+                          width={200}
+                          height={200}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-full object-cover"
                         />
                       </div>

@@ -210,7 +210,11 @@ function CouplePreviewSection() {
             <div className="aspect-[3/4] rounded-elegant overflow-hidden border border-gold/10">
               <img
                 src="https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=800&h=1067&fit=crop"
-                alt="Elegant couple"
+                alt="Elegant couple enjoying a luxury invitation experience"
+                width={800}
+                height={1067}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover hover:scale-105 transition-transform duration-1000 ease-luxury"
               />
             </div>
@@ -333,6 +337,10 @@ function FeaturedTemplatesSection() {
                 <img
                   src={t.image}
                   alt={t.name}
+                  width={600}
+                  height={800}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-luxury"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />

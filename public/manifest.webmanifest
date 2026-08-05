@@ -1,0 +1,18 @@
+{
+  "name": "Velvet & Gold",
+  "short_name": "VelvetGold",
+  "description": "Luxury invitation experiences with elegant templates and RSVP tracking.",
+  "theme_color": "#0A0A0A",
+  "background_color": "#0A0A0A",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

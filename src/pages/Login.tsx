@@ -1,30 +1,129 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState, type FormEvent } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Title } from '@/components/ui/Title';
+import { getSession, signInWithEmail, signOut, signUpWithEmail, upsertUserProfile } from '@/services/supabaseAuth';
 
 export function Login() {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const [mode, setMode] = useState<'sign-in' | 'sign-up'>('sign-in');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadSession = async () => {
+      try {
+        const { user } = await getSession();
+        if (user?.email) {
+          setUserEmail(user.email);
+          navigate('/admin', { replace: true });
+        }
+      } catch (err) {
+        console.warn('No active Supabase session yet', err);
+      }
+    };
+
+    void loadSession();
+  }, [navigate]);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsLoading(true);
+    setMessage('');
+    setError('');
+
+    try {
+      if (mode === 'sign-up') {
+        const data = await signUpWithEmail(email, password, { role: 'admin' });
+        if (data.user) {
+          await upsertUserProfile({
+            id: data.user.id,
+            name: data.user.email?.split('@')[0] ?? 'Admin',
+            email: data.user.email,
+            role: 'admin',
+          });
+        }
+
+        if (data.session) {
+          setUserEmail(data.session.user.email ?? null);
+          setMessage('Account created. You are now signed in.');
+          navigate('/admin', { replace: true });
+        } else {
+          setMessage('Account created. Please confirm your email before signing in.');
+        }
+      } else {
+        const data = await signInWithEmail(email, password);
+        if (data.user) {
+          await upsertUserProfile({
+            id: data.user.id,
+            name: data.user.email?.split('@')[0] ?? 'Admin',
+            email: data.user.email,
+            role: 'admin',
+          });
+        }
+
+        setUserEmail(data.user?.email ?? null);
+        setMessage('Signed in successfully.');
+        navigate('/admin', { replace: true });
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Authentication failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      setUserEmail(null);
+      setMessage('Signed out successfully.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to sign out');
+    }
+  };
 
   return (
     <div className="space-y-8">
       <div className="space-y-3">
         <Title as="h1" variant="card" color="ivory">
-          Welcome back
+          {mode === 'sign-in' ? 'Welcome back' : 'Create your account'}
         </Title>
         <p className="font-body text-body-sm text-ivory/50">
-          Enter your credentials to access your account
+          {mode === 'sign-in'
+            ? 'Enter your credentials to access your account'
+            : 'Set up Supabase authentication for your invitation workspace'}
         </p>
       </div>
 
-      <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+      {userEmail ? (
+        <div className="rounded-elegant border border-gold/20 bg-black-50 p-4 text-sm text-ivory/70">
+          <p>Signed in as {userEmail}</p>
+          <Button variant="outline" size="sm" className="mt-4" onClick={handleSignOut}>
+            Sign Out
+          </Button>
+        </div>
+      ) : null}
+
+      {message ? <p className="text-sm text-green-400">{message}</p> : null}
+      {error ? <p className="text-sm text-red-400">{error}</p> : null}
+
+      <form className="space-y-6" onSubmit={handleSubmit}>
         <Input
           label="Email Address"
           type="email"
           placeholder="name@example.com"
           autoComplete="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          required
         />
 
         <div className="space-y-2">
@@ -42,8 +141,11 @@ export function Login() {
           <div className="relative">
             <input
               type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
               placeholder="Enter your password"
               className="w-full bg-black-50 border border-gold/15 text-ivory placeholder:text-ivory/30 font-body text-body-md rounded-elegant px-4 py-3 pr-12 transition-all duration-300 ease-luxury focus:outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/20 hover:border-gold/30"
+              required
             />
             <button
               type="button"
@@ -59,10 +161,24 @@ export function Login() {
           </div>
         </div>
 
-        <Button variant="gold" size="md" className="w-full">
-          Sign In
-          <ArrowRight className="ml-2 h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button type="submit" variant="gold" size="md" className="flex-1" isLoading={isLoading}>
+            {mode === 'sign-in' ? 'Sign In' : 'Create Account'}
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="md"
+            onClick={() => {
+              setMode(mode === 'sign-in' ? 'sign-up' : 'sign-in');
+              setError('');
+              setMessage('');
+            }}
+          >
+            {mode === 'sign-in' ? 'Sign Up' : 'Sign In'}
+          </Button>
+        </div>
       </form>
 
       <div className="relative">
@@ -100,12 +216,13 @@ export function Login() {
 
       <p className="text-center font-body text-body-sm text-ivory/40">
         Don&apos;t have an account?{' '}
-        <Link
-          to="/"
+        <button
+          type="button"
+          onClick={() => setMode('sign-up')}
           className="text-gold hover:text-gold-400 transition-colors font-medium"
         >
           Get started
-        </Link>
+        </button>
       </p>
     </div>
   );
